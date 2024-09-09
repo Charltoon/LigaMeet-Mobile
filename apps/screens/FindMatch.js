@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const HomeScreen = () => {
+const FindMatchScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to LigaMeet!</Text>
+      <Text style={styles.title}>Find a Match</Text>
     </View>
   );
 };
@@ -23,4 +23,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default FindMatchScreen;
