@@ -27,11 +27,13 @@ const LandingPage = ({ navigation }) => {
                 style={styles.loginButton}
                 onPress={() => navigation.navigate('Login')}  // Navigate to Login screen
             >
-                <Text style={styles.loginText}>Log in</Text>
+                <Text style={styles.loginText}>Log In</Text>
             </TouchableOpacity>
 
             {/* Skip for Now */}
-            <TouchableOpacity>
+            <TouchableOpacity
+                 onPress={() => navigation.navigate('Main', { screen: 'Home' })}  // Navigate to TabNavigator, targeting Home
+            >             
                 <Text style={styles.skipText}>Skip for now</Text>
             </TouchableOpacity>
         </View>

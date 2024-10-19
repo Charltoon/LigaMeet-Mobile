@@ -1,5 +1,4 @@
 # add repo
-
 echo "# project_name" >> README.md
 git init
 git add README.md
@@ -10,7 +9,7 @@ git remote add origin https://github.com/Charltoon/"project_name".git
 git push -u origin main
 
 
-# git add
+# main-branch
 git add .
 git commit -m " message "
 git push
