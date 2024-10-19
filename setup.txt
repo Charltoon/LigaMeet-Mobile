@@ -19,6 +19,8 @@ git push
 git init
 git pull "github link"
 
+npm install @supabase/supabase-js
+npm install @react-native-async-storage/async-storage
 
 npx npx yarn add expo
 npx expo start
