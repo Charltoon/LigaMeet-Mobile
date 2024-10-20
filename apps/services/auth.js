@@ -42,20 +42,14 @@ export const loginUserWithUsername = async (identifier, password) => {
   let email = identifier;
 
   if (!identifier.includes('@')) {
-    console.log('Querying for username:', identifier);
     const { data, error } = await supabase
       .from('auth_user')
       .select('email')
       .eq('username', identifier)
       .single();
 
-    if (error) {
-      console.error('Error fetching user:', error.message);
-      throw new Error(`No user found with username: ${identifier}`);
-    }
-
-    if (!data) {
-      console.error('No user found with that username');
+    if (error || !data) {
+      console.error('Error fetching user:', error?.message || 'No user found with that username');
       throw new Error(`No user found with username: ${identifier}`);
     }
 
@@ -73,13 +67,17 @@ export const loginUserWithUsername = async (identifier, password) => {
   }
 
   if (authData?.user) {
-    await AsyncStorage.setItem('userSession', JSON.stringify(authData.user));
+    await AsyncStorage.setItem('userSession', JSON.stringify({ 
+      email: authData.user.email, 
+      username: identifier.includes('@') ? authData.user.username : identifier 
+    }));
   } else {
     console.error('Login user is undefined');
   }
 
   return authData.user;
 };
+
 
 export const loginUser = async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({
