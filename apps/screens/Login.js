@@ -1,42 +1,39 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { loginUser } from '../services/auth';
+import { loginUserWithUsername } from '../services/auth';
 
 const Login = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState(''); 
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+    if (!identifier || !password) {
+      Alert.alert('Error', 'Please enter your username/email and password.');
       return;
     }
     setLoading(true);
     try {
-      const user = await loginUser(email, password);
-      setMessage(`Welcome, ${user.email}!`);
+      const user = await loginUserWithUsername(identifier, password);
+      setMessage(`Welcome, ${user.email || user.username}!`);
       navigation.navigate('Main', { screen: 'Home' });
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Login Error', 'Invalid email or password. Please try again.');
+      Alert.alert('Login Error', 'Invalid username/email or password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-  
-  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log In</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
+        placeholder="Username or Email"
+        value={identifier}
+        onChangeText={setIdentifier}
       />
       <TextInput
         style={styles.input}
@@ -48,8 +45,8 @@ const Login = ({ navigation }) => {
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginText}>Log In</Text>
       </TouchableOpacity>
-      {loading && <ActivityIndicator />} 
-      {message ? <Text>{message}</Text> : null} 
+      {loading && <ActivityIndicator />}
+      {message ? <Text>{message}</Text> : null}
       <View style={styles.signUpContainer}>
         <Text style={styles.signUpText}>Don't have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
