@@ -8,7 +8,7 @@ export const registerUser = async (username, email, password) => {
     let controller = new AbortController();
     let timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    let response = await fetch('http://192.168.1.10:8000/api/register/', {
+    let response = await fetch('http://192.168.1.2:8000/api/register/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
