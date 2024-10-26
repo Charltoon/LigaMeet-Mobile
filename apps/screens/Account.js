@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { getUserSession } from '../services/auth';
+import { getUserSession, logoutUser } from '../services/auth';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const AccountScreen = () => {
+const AccountScreen = ({ navigation }) => {
   const [user, setUser] = useState({
     username: '',
     email: '',
@@ -17,6 +17,7 @@ const AccountScreen = () => {
     phone: '',
     profilePicture: '',
   });
+
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -67,6 +68,17 @@ const AccountScreen = () => {
       Alert.alert('Success', 'Your profile has been updated!');
     } catch (error) {
       Alert.alert('Error', 'There was an error updating your profile. Please try again later.');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      Alert.alert('Logged out', 'You have been logged out successfully.', [
+        { text: 'OK', onPress: () => navigation.navigate('LandingPage') }
+      ]);
+    } catch (error) {
+      Alert.alert('Error', 'There was an error logging you out. Please try again later.');
     }
   };
 
@@ -178,6 +190,9 @@ const AccountScreen = () => {
           <TouchableOpacity style={styles.button} onPress={handleSave}>
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.buttonText}>Logout</Text>
+          </TouchableOpacity>
         </>
       )}
     </ScrollView>
@@ -193,6 +208,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, color: '#1F2D3D', marginBottom: 5 },
   input: { width: '100%', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', backgroundColor: 'white' },
   button: { backgroundColor: '#4285F4', paddingVertical: 15, paddingHorizontal: 100, borderRadius: 10, marginTop: 20 },
+  logoutButton: { backgroundColor: '#EB5757', paddingVertical: 15, paddingHorizontal: 100, borderRadius: 10, marginTop: 20 },
   buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
 });
 
