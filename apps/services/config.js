@@ -1,2 +1,4 @@
-export const supabaseUrl = 'https://xkhsbtjbdmxedylsokmw.supabase.co';
-export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhraHNidGpiZG14ZWR5bHNva213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjgzNjA0NzAsImV4cCI6MjA0MzkzNjQ3MH0.HKNe8LJ3wEijb9igvcy4uNOfDjM9fhB1kv0S5OgB9go'; // Replace with actual Anon Key
+
+export const supabaseUrl = 'https://bpdoyobzyfbecbakqaya.supabase.co/';
+
+export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZG95b2J6eWZiZWNiYWtxYXlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAwNDczMzgsImV4cCI6MjA0NTYyMzMzOH0.yqM60ZeFb2OdlECYMMK7bHltTmO3bKrgYGSeNVtmY_E'; // Replace with actual Anon Key
