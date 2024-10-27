@@ -5,12 +5,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import HomeScreen from './apps/screens/HomeScreen';
-import FindMatchScreen from './apps/screens/FindMatch';
 import FindTeamScreen from './apps/screens/FindTeam';
 import AccountScreen from './apps/screens/Account';
 import LandingPage from './apps/screens/LandingPage';
 import LoginScreen from './apps/screens/Login';
 import SignUpScreen from './apps/screens/SignUp';
+import HistoryScreen from './apps/screens/History';
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -24,10 +25,10 @@ function TabNavigator() {
           let iconName;
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Find Match') {
-            iconName = focused ? 'search' : 'search-outline';
-          } else if (route.name === 'Find Team') {
+          } else if (route.name === 'Team') {
             iconName = focused ? 'people' : 'people-outline';
+          } else if (route.name === 'History') {
+            iconName = focused ? 'time' : 'time-outline';
           } else if (route.name === 'Account') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -39,12 +40,13 @@ function TabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Find Match" component={FindMatchScreen} />
-      <Tab.Screen name="Find Team" component={FindTeamScreen} />
+      <Tab.Screen name="Team" component={FindTeamScreen} />
+      <Tab.Screen name="History" component={HistoryScreen} />
       <Tab.Screen name="Account" component={AccountScreen} />
     </Tab.Navigator>
   );
 }
+
 
 function App() {
   return (

@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const FindMatchScreen = () => {
+const HistoryScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Find a Match</Text>
+      <Text style={styles.title}>History of all matches</Text>
     </View>
   );
 };
@@ -23,4 +23,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FindMatchScreen;
+export default HistoryScreen;
