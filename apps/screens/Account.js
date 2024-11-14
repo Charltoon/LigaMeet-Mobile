@@ -49,7 +49,6 @@ const AccountScreen = ({ navigation }) => {
   const handleChoosePhoto = () => {
     const options = { mediaType: 'photo', quality: 1 };
     launchImageLibrary(options, (response) => {
-      console.log(response);
       if (response.didCancel) {
         console.log('User cancelled image picker');
       } else if (response.errorCode) {
@@ -64,7 +63,6 @@ const AccountScreen = ({ navigation }) => {
   const handleSave = async () => {
     try {
       // Implement the logic to save user information and profile picture to your server
-      // Example: await uploadProfileData(user);
       Alert.alert('Success', 'Your profile has been updated!');
     } catch (error) {
       Alert.alert('Error', 'There was an error updating your profile. Please try again later.');
@@ -89,13 +87,15 @@ const AccountScreen = ({ navigation }) => {
         <Text style={styles.loadingText}>Loading...</Text>
       ) : (
         <>
-          <TouchableOpacity onPress={handleChoosePhoto}>
+          <TouchableOpacity onPress={handleChoosePhoto} style={styles.profileImageContainer}>
             {user.profilePicture ? (
               <Image source={{ uri: user.profilePicture }} style={styles.profileImage} />
             ) : (
               <Image source={require('../../assets/vvbv.png')} style={styles.profileImage} />
             )}
+            <Text style={styles.changePhotoText}>Change Photo</Text>
           </TouchableOpacity>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Username</Text>
             <TextInput
@@ -105,6 +105,7 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('username', value)}
             />
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
@@ -114,6 +115,7 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('email', value)}
             />
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>First Name</Text>
             <TextInput
@@ -123,6 +125,7 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('firstName', value)}
             />
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Last Name</Text>
             <TextInput
@@ -132,6 +135,7 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('lastName', value)}
             />
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Middle Name</Text>
             <TextInput
@@ -141,6 +145,7 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('middleName', value)}
             />
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Date of Birth</Text>
             <TouchableOpacity onPress={() => setShowDatePicker(true)}>
@@ -148,7 +153,7 @@ const AccountScreen = ({ navigation }) => {
                 style={styles.input}
                 placeholder="Date of Birth"
                 value={user.dateOfBirth.toDateString()}
-                editable={false} // Prevent manual editing
+                editable={false}
               />
             </TouchableOpacity>
             {showDatePicker && (
@@ -160,6 +165,7 @@ const AccountScreen = ({ navigation }) => {
               />
             )}
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Gender</Text>
             <TextInput
@@ -169,6 +175,7 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('gender', value)}
             />
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Address</Text>
             <TextInput
@@ -178,6 +185,7 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('address', value)}
             />
           </View>
+
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Phone</Text>
             <TextInput
@@ -187,12 +195,16 @@ const AccountScreen = ({ navigation }) => {
               onChangeText={(value) => handleInputChange('phone', value)}
             />
           </View>
-          <TouchableOpacity style={styles.button} onPress={handleSave}>
-            <Text style={styles.buttonText}>Save</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.buttonText}>Logout</Text>
-          </TouchableOpacity>
+
+          {/* Buttons Side by Side */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
+              <Text style={styles.buttonText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </>
       )}
     </ScrollView>
@@ -200,16 +212,82 @@ const AccountScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, alignItems: 'center', backgroundColor: '#F6F8FB', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#1F2D3D', marginBottom: 20 },
-  profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 20 },
-  loadingText: { fontSize: 18, color: '#AAB0B7' },
-  fieldContainer: { width: '100%', marginBottom: 20 },
-  label: { fontSize: 16, color: '#1F2D3D', marginBottom: 5 },
-  input: { width: '100%', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', backgroundColor: 'white' },
-  button: { backgroundColor: '#4285F4', paddingVertical: 15, paddingHorizontal: 100, borderRadius: 10, marginTop: 20 },
-  logoutButton: { backgroundColor: '#EB5757', paddingVertical: 15, paddingHorizontal: 100, borderRadius: 10, marginTop: 20 },
-  buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  container: {
+    flexGrow: 1,
+    alignItems: 'center',
+    backgroundColor: '#F6F8FB',
+    padding: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#1F2D3D',
+    marginBottom: 25,
+    marginVertical: 50,
+    fontFamily: 'Roboto',
+  },
+  profileImageContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    marginBottom: 10,
+  },
+  changePhotoText: {
+    color: '#4285F4',
+    fontWeight: '500',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#AAB0B7',
+  },
+  fieldContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    color: '#1F2D3D',
+    marginBottom: 5,
+    fontWeight: '500',
+  },
+  input: {
+    width: '100%',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#FFFFFF',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    width: '100%',
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50',
+  },
+  logoutButton: {
+    backgroundColor: '#F44336',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
 
 export default AccountScreen;

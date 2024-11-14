@@ -22,5 +22,9 @@ git pull "github link"
 npm install @supabase/supabase-js
 npm install @react-native-async-storage/async-storage
 
+pm install react-native-safe-area-context
+npm install lucide-react-native
+
+
 npx npx yarn add expo
 npx expo start

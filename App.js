@@ -10,7 +10,7 @@ import AccountScreen from './apps/screens/Account';
 import LandingPage from './apps/screens/LandingPage';
 import LoginScreen from './apps/screens/Login';
 import SignUpScreen from './apps/screens/SignUp';
-import HistoryScreen from './apps/screens/History';
+import Dashboard from './apps/screens/Dashboard';
 
 
 const Tab = createBottomTabNavigator();
@@ -27,8 +27,8 @@ function TabNavigator() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Team') {
             iconName = focused ? 'people' : 'people-outline';
-          } else if (route.name === 'History') {
-            iconName = focused ? 'time' : 'time-outline';
+          } else if (route.name === 'Dashboard') {
+            iconName = focused ? 'analytics' : 'analytics-outline';
           } else if (route.name === 'Account') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -39,9 +39,9 @@ function TabNavigator() {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} /> 
+      <Tab.Screen name="Dashboard" component={Dashboard} />
       <Tab.Screen name="Team" component={FindTeamScreen} />
-      <Tab.Screen name="History" component={HistoryScreen} />
       <Tab.Screen name="Account" component={AccountScreen} />
     </Tab.Navigator>
   );
