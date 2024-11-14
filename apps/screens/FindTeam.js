@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewButton: {
-    backgroundColor: '#3C4858',
+    backgroundColor: '#4CAF50',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 8,
