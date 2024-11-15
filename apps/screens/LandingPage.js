@@ -31,11 +31,11 @@ const LandingPage = ({ navigation }) => {
             </TouchableOpacity>
 
             {/* Skip for Now */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
                  onPress={() => navigation.navigate('Main', { screen: 'Home' })}  // Navigate to TabNavigator, targeting Home
             >             
                 <Text style={styles.skipText}>Skip for now</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
         </View>
     );
 };
