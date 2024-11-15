@@ -6,9 +6,9 @@ const FindTeamScreen = () => {
   const [activeTab, setActiveTab] = useState('myTeam');
 
   const team = {
-    name: 'Thunderbolts',
-    coach: 'Mike Johnson',
-    members: ['John Doe', 'Jane Smith', 'Bob Wilson'],
+    name: 'Lion',
+    coach: 'Tab Baldwin',
+    members: ['Jay Montebon', 'Manuel Amante', 'Frime Baculao'],
   };
 
   const teams = [
@@ -44,8 +44,8 @@ const FindTeamScreen = () => {
             {team.members.map((member, index) => (
               <Text key={index} style={styles.memberItem}>{member}</Text>
             ))}
-            <TouchableOpacity style={styles.manageButton}>
-              <Text style={styles.buttonText}>Manage Team</Text>
+            <TouchableOpacity style={styles.leaveButton}>
+              <Text style={styles.buttonText}>Leave Team</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -174,8 +174,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#3C4858',
   },
-  manageButton: {
-    backgroundColor: '#4CAF50',
+  leaveButton: {
+    backgroundColor: '#F44336',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,

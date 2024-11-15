@@ -6,7 +6,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('teams');
 
   const user = {
-    username: 'JohnDoe',
+    username: 'Jay Montebon',
     sport: 'Basketball',
     gamesPlayed: 10,
     points: 15.5,
@@ -14,9 +14,9 @@ const Dashboard = () => {
   };
 
   const team = {
-    name: 'Thunderbolts',
-    coach: 'Mike Johnson',
-    members: ['John Doe', 'Jane Smith', 'Bob Wilson'],
+    name: 'Lion',
+    coach: 'Tab Baldwin',
+    members: ['Jay Montebon', 'Manuel Amante', 'Frime Baculao'],
   };
 
   const recentActivities = [
