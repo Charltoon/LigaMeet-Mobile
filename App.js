@@ -11,6 +11,7 @@ import LoginScreen from './apps/screens/Login';
 import SignUpScreen from './apps/screens/SignUp';
 import Dashboard from './apps/screens/Dashboard';
 import ProfileScreen from './apps/screens/Profile';
+import ResetPassword from './apps/screens/ResetPassword';
 
 
 const Tab = createBottomTabNavigator();
@@ -67,6 +68,11 @@ function App() {
             name="Login"
             component={LoginScreen}
             options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ResetPassword" // Add ResetPassword to the stack
+            component={ResetPassword}
+            options={{ headerShown: true, title: 'Reset Password' }} // Show header with a title
           />
           <Stack.Screen
             name="Main"

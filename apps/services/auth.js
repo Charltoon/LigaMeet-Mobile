@@ -8,7 +8,7 @@ export const registerUser = async (username, email, password) => {
     let controller = new AbortController();
     let timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    let response = await fetch('http://192.168.1.8:8000/api/register/', {
+    let response = await fetch('http://192.168.1.2:8000/api/register/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -60,7 +60,7 @@ export const loginUserWithUsername = async (identifier, password) => {
   }
   
   try {
-    const response = await fetch('http://192.168.1.8:8000/login/register/', {
+    const response = await fetch('http://192.168.1.2:8000/login/register/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -97,6 +97,8 @@ export const getUserSession = async () => {
   const session = await AsyncStorage.getItem('userSession');
   return session ? JSON.parse(session) : null;
 };
+
+
 
 export const resetPassword = async (email) => {
   const { error } = await supabase.auth.api.resetPasswordForEmail(email);
