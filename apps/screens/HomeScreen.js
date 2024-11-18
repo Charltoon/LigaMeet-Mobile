@@ -54,9 +54,9 @@ const HomeScreen = () => {
                 <Text style={[styles.eventTitle, { color: theme.text }]}>Street Basketball Tournament</Text>
                 <Text style={[styles.eventDate, { color: theme.text }]}>Today, 3:00 PM - 6:00 PM</Text>
                 <Text style={[styles.eventLocation, { color: theme.text }]}>Central Park</Text>
-                {/* <TouchableOpacity style={[styles.liveButton, { backgroundColor: theme.accent }]}>
-                  <Text style={styles.liveButtonText}>Watch Live</Text>
-                </TouchableOpacity> */}
+                <TouchableOpacity style={[styles.liveButton, { backgroundColor: theme.accent }]}>
+                  <Text style={styles.liveButtonText}>More Info</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </ScrollView>

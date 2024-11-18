@@ -11,6 +11,7 @@ import LoginScreen from './apps/screens/Login';
 import SignUpScreen from './apps/screens/SignUp';
 import Dashboard from './apps/screens/Dashboard';
 import ProfileScreen from './apps/screens/Profile';
+import ChooseSportScreen from './apps/screens/ChooseSport';
 import ResetPassword from './apps/screens/ResetPassword';
 
 
@@ -70,9 +71,14 @@ function App() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
-            name="ResetPassword" // Add ResetPassword to the stack
+            name="ResetPassword"
             component={ResetPassword}
-            options={{ headerShown: true, title: 'Reset Password' }} // Show header with a title
+            options={{ headerShown: true, title: 'Reset Password' }} 
+          />
+          <Stack.Screen
+            name="ChooseSport"
+            component={ChooseSportScreen}
+            options={{ headerShown: true, title: 'Choose Sport' }}
           />
           <Stack.Screen
             name="Main"

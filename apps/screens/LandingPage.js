@@ -30,12 +30,11 @@ const LandingPage = ({ navigation }) => {
                 <Text style={styles.loginText}>Log In</Text>
             </TouchableOpacity>
 
-            {/* Forgot Password Button */}
             <TouchableOpacity
-                onPress={() => navigation.navigate('ResetPassword')}  // Navigate to Forgot Password screen
-            >
-                <Text style={styles.resetPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+                 onPress={() => navigation.navigate('Main', { screen: 'Home' })}  // Navigate to TabNavigator, targeting Home
+            >             
+                <Text style={styles.skipText}>Skip for now</Text>
+            </TouchableOpacity> 
         </View>
     );
 };
@@ -94,6 +93,11 @@ const styles = StyleSheet.create({
         marginTop: 10,
         textDecorationLine: 'underline',
     },
+    skipText: {
+        color: '#4285F4',
+        fontSize: 16,
+        marginTop: 20,
+    }
 });
 
 export default LandingPage;

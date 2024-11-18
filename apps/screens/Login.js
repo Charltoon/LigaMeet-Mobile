@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityInd
 import { loginUserWithUsername } from '../services/auth';
 
 const Login = ({ navigation }) => {
-  const [identifier, setIdentifier] = useState(''); 
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -17,7 +17,7 @@ const Login = ({ navigation }) => {
     try {
       const user = await loginUserWithUsername(identifier, password);
       setMessage(`Welcome, ${user.email || user.username}!`);
-      navigation.navigate('Main', { screen: 'Home' });
+      navigation.navigate('ChooseSport');
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Login Error', 'Invalid username/email or password. Please try again.');
@@ -47,6 +47,13 @@ const Login = ({ navigation }) => {
       </TouchableOpacity>
       {loading && <ActivityIndicator />}
       {message ? <Text>{message}</Text> : null}
+
+      <View style={styles.forgotPasswordContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.signUpContainer}>
         <Text style={styles.signUpText}>Don't have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -101,6 +108,13 @@ const styles = StyleSheet.create({
     color: '#AAB0B7',
   },
   signUpLink: {
+    fontSize: 16,
+    color: '#4285F4',
+  },
+  forgotPasswordContainer: {
+    marginTop: 15,
+  },
+  forgotPasswordText: {
     fontSize: 16,
     color: '#4285F4',
   },
