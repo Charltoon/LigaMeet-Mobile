@@ -1,20 +1,26 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons'; // Importing MaterialCommunityIcons
-
-const sports = [
-  { name: 'Basketball', icon: 'basketball' }, // MaterialCommunityIcons for basketball
-  { name: 'Volleyball', icon: 'volleyball' }, // MaterialCommunityIcons for volleyball
-  { name: 'Soccer', icon: 'soccer' }, // MaterialCommunityIcons for soccer
-  { name: 'Tennis', icon: 'tennis' }, // MaterialCommunityIcons for tennis
-  { name: 'Swimming', icon: 'pool' }, // MaterialCommunityIcons for swimmer
-  { name: 'Cycling', icon: 'bike' }, // MaterialCommunityIcons for cycling
-  { name: 'Running', icon: 'run' }, // MaterialCommunityIcons for running
-  { name: 'Golf', icon: 'golf' }, // MaterialCommunityIcons for golf
-];
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, StatusBar, Image, ActivityIndicator } from 'react-native';
 
 const ChooseSportScreen = ({ navigation }) => {
+  const [sports, setSports] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedSport, setSelectedSport] = useState(null);
+
+  // Fetch sports from API
+  useEffect(() => {
+    const fetchSports = async () => {
+      try {
+        const response = await fetch('http://192.168.1.2:8000/api/sports/'); // Replace with your API URL
+        const data = await response.json();
+        setSports(data);
+      } catch (error) {
+        console.error('Error fetching sports:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSports();
+  }, []);
 
   const handleSelectSport = (sport) => {
     setSelectedSport(sport);
@@ -32,32 +38,44 @@ const ChooseSportScreen = ({ navigation }) => {
     <TouchableOpacity
       style={[
         styles.sportItem,
-        selectedSport === item.name && styles.selectedSportItem,
+        selectedSport === item.SPORT_NAME && styles.selectedSportItem,
       ]}
-      onPress={() => handleSelectSport(item.name)}
+      onPress={() => handleSelectSport(item.SPORT_NAME)}
     >
-      <MaterialCommunityIcons 
-        name={item.icon} 
-        size={40} 
-        color={selectedSport === item.name ? '#FFFFFF' : '#333333'} 
-      />
-      <Text style={[
-        styles.sportText,
-        selectedSport === item.name && styles.selectedSportText,
-      ]}>
-        {item.name}
+      {item.IMAGE ? (
+        <Image source={{ uri: item.IMAGE }} style={styles.sportImage} />
+      ) : (
+        <View style={styles.placeholderIcon}>
+          <Text style={styles.placeholderText}>No Image</Text>
+        </View>
+      )}
+      <Text
+        style={[
+          styles.sportText,
+          selectedSport === item.SPORT_NAME && styles.selectedSportText,
+        ]}
+      >
+        {item.SPORT_NAME}
       </Text>
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
-      <Text style={styles.title}></Text>
+      <Text style={styles.title}>Choose a Sport</Text>
       <FlatList
         data={sports}
         renderItem={renderSportItem}
-        keyExtractor={(item) => item.name}
+        keyExtractor={(item) => item.id.toString()}
         numColumns={2}
         contentContainerStyle={styles.sportList}
       />
@@ -80,10 +98,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: 'bold',
-
+    fontSize: 20,
     color: '#333333',
     textAlign: 'center',
-
+    marginVertical: 10,
   },
   sportList: {
     alignItems: 'center',
@@ -113,6 +131,23 @@ const styles = StyleSheet.create({
   },
   selectedSportText: {
     color: '#FFFFFF',
+  },
+  sportImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  placeholderIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#DDDDDD',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#888888',
+    fontSize: 12,
   },
   confirmButton: {
     backgroundColor: '#4CAF50',

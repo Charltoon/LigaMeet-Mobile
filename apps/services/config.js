@@ -1,4 +1,4 @@
 
-export const supabaseUrl = 'https://ssdofagddakowthmuawd.supabase.co';
+export const supabaseUrl = 'https://gxndvpmnrxeehmtjvbfi.supabase.co';
 
-export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzZG9mYWdkZGFrb3d0aG11YXdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA4OTQ0MTgsImV4cCI6MjA0NjQ3MDQxOH0.lnYiGvYcpo4r5abD4GZ0Znba80LQi-_4tRJvzdfdGos';
+export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4bmR2cG1ucnhlZWhtdGp2YmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI0NjQ4MzIsImV4cCI6MjA0ODA0MDgzMn0.T4DJCrhs0CRIU-ZTSWXha7i88p0WIzkoCcG5HKTb9-4';

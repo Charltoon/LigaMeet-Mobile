@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2D3D',
     marginBottom: 25,
-    marginVertical: 50,
+    marginVertical: 20,
     fontFamily: 'Roboto',
   },
   profileImageContainer: {
