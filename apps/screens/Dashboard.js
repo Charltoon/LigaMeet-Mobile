@@ -1,17 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('teams');
+  const [invitations, setInvitations] = useState([]);
+  const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const user = {
+    id: 108,
     username: 'Jay Montebon',
     sport: 'Basketball',
     gamesPlayed: 10,
     points: 15.5,
     assists: 5.2,
   };
+
+  useEffect(() => {
+    console.log(`Fetching invitations for user ID: ${user.id}`);
+    fetch(`http://192.168.1.2:8000/api/invitations/${user.id}/`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Fetched invitations:', data);
+        setInvitations(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching invitations:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleNotification = (message) => {
+    setNotification(message);
+    setTimeout(() => setNotification(null), 3000); // Clear notification after 3 seconds
+  };
+
+  const handleAccept = (invitationId) => {
+    fetch(`http://192.168.1.2:8000/api/invitations/update/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        invitation_id: invitationId,
+        status: 'Accepted',
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Invitation accepted:', data);
+        setInvitations((prevInvitations) =>
+          prevInvitations.map((invitation) =>
+            invitation.id === invitationId
+              ? { ...invitation, status: 'Accepted' }
+              : invitation
+          )
+        );
+        handleNotification('Invitation accepted successfully.');
+      })
+      .catch((error) => {
+        console.error('Error accepting invitation:', error);
+        handleNotification('Failed to accept invitation.');
+      });
+  };
+
+  const handleDecline = (invitationId) => {
+    fetch(`http://192.168.1.2:8000/api/invitations/update/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        invitation_id: invitationId,
+        status: 'Declined',
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Invitation declined:', data);
+        setInvitations((prevInvitations) =>
+          prevInvitations.map((invitation) =>
+            invitation.id === invitationId
+              ? { ...invitation, status: 'Declined' }
+              : invitation
+          )
+        );
+        handleNotification('Invitation declined successfully.');
+      })
+      .catch((error) => {
+        console.error('Error declining invitation:', error);
+        handleNotification('Failed to decline invitation.');
+      });
+  };
+
+  
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
 
   const team = {
     name: 'Lion',
@@ -22,16 +129,6 @@ const Dashboard = () => {
   const recentActivities = [
     { id: 1, description: 'Joined a new team', timestamp: '2023-11-14 14:30' },
     { id: 2, description: 'Played a match', timestamp: '2023-11-13 18:00' },
-  ];
-
-  const invitations = [
-    { id: 1, teamName: 'Rockets' },
-    { id: 2, teamName: 'Comets' },
-  ];
-
-  const teams = [
-    { id: 1, name: 'Eagles', type: 'Basketball' },
-    { id: 2, name: 'Sharks', type: 'Volleyball' },
   ];
 
   return (
@@ -85,25 +182,35 @@ const Dashboard = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Invitations</Text>
           {invitations.map((invitation) => (
-            <View key={invitation.id} style={styles.invitation}>
-              <Text style={styles.invitationText}>
-                {invitation.teamName} invited you to join
-              </Text>
-              <View style={styles.invitationButtons}>
-                <TouchableOpacity style={[styles.button, styles.acceptButton]}>
-                  <Text style={styles.buttonText}>Accept</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, styles.declineButton]}>
-                  <Text style={styles.buttonText}>Decline</Text>
-                </TouchableOpacity>
+            invitation.status === 'Pending' && (
+              <View key={invitation.id} style={styles.invitation}>
+                <Text style={styles.invitationText}>
+                  Team Name: {invitation.team_name} invited you to join
+                </Text>
+                <Text>Sent At: {new Date(invitation.sent_at).toLocaleString()}</Text>
+                <View style={styles.invitationButtons}>
+                  <TouchableOpacity 
+                    style={[styles.button, styles.acceptButton]} 
+                    onPress={() => handleAccept(invitation.id)}
+                  >
+                    <Text style={styles.buttonText}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.button, styles.declineButton]} 
+                    onPress={() => handleDecline(invitation.id)}
+                  >
+                    <Text style={styles.buttonText}>Decline</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            )
           ))}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -242,6 +349,17 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#ffffff',
     fontWeight: 'bold',
+  },
+  notification: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  notificationText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 
