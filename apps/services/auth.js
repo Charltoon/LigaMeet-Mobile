@@ -27,7 +27,7 @@ export const registerUser = async (username, email, password) => {
       console.error(json.error);
       Alert.alert('Error', json.error);
     }
-} catch (error) {
+  } catch (error) {
     if (error.name === 'AbortError') {
       console.error('Request timed out');
       Alert.alert('Error', 'Network request timed out');
@@ -41,12 +41,13 @@ export const registerUser = async (username, email, password) => {
 export const loginUserWithUsername = async (identifier, password) => {
   let email = identifier;
   let username = identifier;
+  let user_id;  // Declare user_id
 
   if (!identifier.includes('@')) {
     // Fetch the email associated with the username from Supabase
     const { data, error } = await supabase
       .from('auth_user')
-      .select('email, username')
+      .select('email, username, id')  // Ensure user_id is fetched
       .eq('username', identifier)
       .single();
 
@@ -57,8 +58,9 @@ export const loginUserWithUsername = async (identifier, password) => {
     }
     email = data.email;
     username = data.username;
+    user_id = data.id;  // Assign the user_id
   }
-  
+
   try {
     const response = await fetch('http://192.168.1.2:8000/api/login/', {
       method: 'POST',
@@ -69,10 +71,14 @@ export const loginUserWithUsername = async (identifier, password) => {
     const result = await response.json();
     if (response.ok) {
       console.log('Login successful:', result.message);
+
+      // Save user session including user_id
       await AsyncStorage.setItem('userSession', JSON.stringify({
+        user_id: result.user_id || user_id,  // Ensure user_id is part of the response or fallback to fetched id
         email: email,
         username: username,
       }));
+
       return result;
     } else {
       console.error('Login error:', result.error);
@@ -95,10 +101,12 @@ export const logoutUser = async () => {
 
 export const getUserSession = async () => {
   const session = await AsyncStorage.getItem('userSession');
-  return session ? JSON.parse(session) : null;
+  if (session) {
+    const parsedSession = JSON.parse(session);
+    return parsedSession.user_id ? parsedSession : null;  // Ensure user_id exists
+  }
+  return null;
 };
-
-
 
 export const resetPassword = async (email) => {
   const { error } = await supabase.auth.api.resetPasswordForEmail(email);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { getUserSession, logoutUser } from '../services/auth';
+import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView, Alert, Button } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -23,16 +23,27 @@ const AccountScreen = ({ navigation }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const session = await getUserSession();
-      if (session) {
-        setUser((prevState) => ({
-          ...prevState,
-          ...session,
-          dateOfBirth: session.dateOfBirth ? new Date(session.dateOfBirth) : new Date(),
-        }));
+      try {
+        const userId = await AsyncStorage.getItem('user_id');
+        const response = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${userId}`);
+        const data = await response.json();
+
+        if (response.status === 200) {
+          setUser({
+            ...data.account_details,
+            dateOfBirth: data.account_details.dateOfBirth ? new Date(data.account_details.dateOfBirth) : new Date(),
+          });
+        } else {
+          Alert.alert('Error', 'Failed to fetch account details.');
+        }
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        Alert.alert('Error', 'An error occurred while fetching account details.');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     fetchUser();
   }, []);
 
@@ -61,19 +72,54 @@ const AccountScreen = ({ navigation }) => {
   };
 
   const handleSave = async () => {
+    console.log("Save button clicked");
+    
     try {
-      // Implement the logic to save user information and profile picture to your server
-      Alert.alert('Success', 'Your profile has been updated!');
+      const userId = await AsyncStorage.getItem('user_id');
+      console.log('Retrieved user_id:', userId);
+      
+      const payload = {
+        user_id: userId,
+        username: user.username,
+        email: user.email,
+        first_name: user.firstName,
+        last_name: user.lastName,
+        middle_name: user.middleName,
+        date_of_birth: user.dateOfBirth.toISOString(),
+        gender: user.gender,
+        address: user.address,
+        phone: user.phone,
+      };
+  
+      console.log('Sending payload:', payload);
+  
+      const response = await fetch('http://192.168.1.2:8000/api/account/update/', {
+        method: 'PUT', 
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      const data = await response.json();
+      console.log('Server response:', data);
+  
+      if (response.ok) {
+        Alert.alert('Success', 'Profile updated successfully');
+      } else {
+        Alert.alert('Error', data.message || 'Failed to update profile');
+      }
     } catch (error) {
-      Alert.alert('Error', 'There was an error updating your profile. Please try again later.');
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'There was an error updating your profile');
     }
   };
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await AsyncStorage.removeItem('user_id');
       Alert.alert('Logged out', 'You have been logged out successfully.', [
-        { text: 'OK', onPress: () => navigation.navigate('LandingPage') }
+        { text: 'OK', onPress: () => navigation.navigate('LandingPage') },
       ]);
     } catch (error) {
       Alert.alert('Error', 'There was an error logging you out. Please try again later.');
@@ -198,7 +244,11 @@ const AccountScreen = ({ navigation }) => {
 
           {/* Buttons Side by Side */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
+            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={() => {
+              Alert.alert('Button Pressed', 'Save button clicked');
+              console.log('Save button clicked (direct check)');
+              handleSave();
+            }}>
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
@@ -210,6 +260,7 @@ const AccountScreen = ({ navigation }) => {
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -223,7 +274,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2D3D',
     marginBottom: 25,
-    marginVertical: 20,
+    marginVertical: 5,
     fontFamily: 'Roboto',
   },
   profileImageContainer: {
@@ -239,54 +290,53 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   changePhotoText: {
-    color: '#4285F4',
-    fontWeight: '500',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#AAB0B7',
+    fontSize: 16,
+    color: '#007bff',
+    textDecorationLine: 'underline',
   },
   fieldContainer: {
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   label: {
-    fontSize: 16,
-    color: '#1F2D3D',
+    fontSize: 14,
+    color: '#333',
     marginBottom: 5,
-    fontWeight: '500',
   },
   input: {
-    width: '100%',
-    padding: 15,
-    borderRadius: 10,
+    height: 40,
+    borderColor: '#ccc',
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#FFFFFF',
+    borderRadius: 5,
+    paddingLeft: 10,
+    fontSize: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
     width: '100%',
+    marginTop: 20,
   },
   button: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 10,
+    width: '48%',
+    height: 45,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 5,
+    borderRadius: 5,
   },
   saveButton: {
     backgroundColor: '#4CAF50',
   },
   logoutButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: '#FF5733',
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#555',
   },
 });
 

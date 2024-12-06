@@ -3,6 +3,7 @@ import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView,
 import { getUserSession, logoutUser } from '../services/auth';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from '@react-native-async-storage/async-storage';  // Ensure this is imported
 
 const ProfileScreen = ({ navigation }) => {
   const [user, setUser] = useState({
@@ -25,11 +26,29 @@ const ProfileScreen = ({ navigation }) => {
     const fetchUser = async () => {
       const session = await getUserSession();
       if (session) {
-        setUser((prevState) => ({
-          ...prevState,
-          ...session,
-          dateOfBirth: session.dateOfBirth ? new Date(session.dateOfBirth) : new Date(),
-        }));
+        try {
+          const response = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${session.user_id}`);
+          const data = await response.json();
+
+          if (response.ok) {
+            setUser({
+              username: data.account_details.username,
+              email: data.account_details.email,
+              firstName: data.account_details.first_name,
+              lastName: data.account_details.last_name,
+              middleName: data.account_details.middle_name,
+              dateOfBirth: data.account_details.date_of_birth ? new Date(data.account_details.date_of_birth) : new Date(),
+              gender: data.account_details.gender,
+              address: data.account_details.address,
+              phone: data.account_details.phone,
+              profilePicture: data.account_details.image_url || '',
+            });
+          } else {
+            console.error('Error fetching user details:', data.error);
+          }
+        } catch (error) {
+          console.error('Error fetching user details:', error);
+        }
       }
       setLoading(false);
     };
@@ -61,13 +80,73 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleSave = async () => {
+    console.log("Save button clicked");
+    Alert.alert('Button Pressed', 'Save button clicked');
+    
     try {
-      // Implement the logic to save user information and profile picture to your server
-      Alert.alert('Success', 'Your profile has been updated!');
+        // Retrieve the session from AsyncStorage
+        const session = await AsyncStorage.getItem('userSession');
+        
+        if (!session) {
+            console.error('User session not found');
+            Alert.alert('Error', 'User session not found. Please log in again.');
+            return;
+        }
+
+        // Log the session to ensure it contains user_id
+        const parsedSession = JSON.parse(session);
+        console.log('Retrieved session:', parsedSession);
+
+        const userId = parsedSession?.user_id;  // Safely access user_id using optional chaining
+        
+        console.log('Retrieved user_id:', userId);
+
+        if (!userId) {
+            console.error('User ID not found in session');
+            Alert.alert('Error', 'User ID is required');
+            return;
+        }
+
+        // Prepare the payload with the necessary user information
+        const payload = {
+            user_id: userId,
+            username: user.username,
+            email: user.email,
+            first_name: user.firstName,
+            last_name: user.lastName,
+            middle_name: user.middleName,
+            date_of_birth: user.dateOfBirth.toISOString(),
+            gender: user.gender,
+            address: user.address,
+            phone: user.phone,
+            profile_picture: user.profilePicture || "",  // Handle the profile picture
+        };
+
+        console.log('Sending payload:', payload);
+
+        // Send the PUT request to the backend
+        const response = await fetch('http://192.168.1.2:8000/api/account/update/', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        console.log('Server response:', data);
+
+        // Check if the response was successful
+        if (response.ok) {
+            Alert.alert('Success', 'Your profile has been updated!');
+        } else {
+            Alert.alert('Error', data.message || 'Failed to update profile');
+        }
     } catch (error) {
-      Alert.alert('Error', 'There was an error updating your profile. Please try again later.');
+        console.error('Error updating profile:', error);
+        Alert.alert('Error', 'There was an error updating your profile. Please try again later.');
     }
-  };
+};
 
   const handleLogout = async () => {
     try {
@@ -211,6 +290,7 @@ const ProfileScreen = ({ navigation }) => {
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
@@ -223,7 +303,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2D3D',
     marginBottom: 25,
-    marginVertical: 50,
+    marginVertical: 35,
     fontFamily: 'Roboto',
   },
   profileImageContainer: {
