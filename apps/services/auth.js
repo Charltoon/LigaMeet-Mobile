@@ -2,6 +2,14 @@ import { supabase } from './supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 
+const storeUserData = async (userData) => {
+  try {
+    await AsyncStorage.setItem('user_id', userData.id.toString()); // Ensure it's a string
+    console.log('User ID stored:', userData.id);
+  } catch (error) {
+    console.error('Error storing user ID:', error);
+  }
+};
 // auth.js
 export const registerUser = async (username, email, password) => {
   try {
@@ -41,15 +49,16 @@ export const registerUser = async (username, email, password) => {
 export const loginUserWithUsername = async (identifier, password) => {
   let email = identifier;
   let username = identifier;
-  let user_id;  // Declare user_id
+  let user_id;
 
   if (!identifier.includes('@')) {
-    // Fetch the email associated with the username from Supabase
     const { data, error } = await supabase
       .from('auth_user')
-      .select('email, username, id')  // Ensure user_id is fetched
+      .select('email, username, id')
       .eq('username', identifier)
       .single();
+
+    console.log('Supabase Response:', { data, error });
 
     if (error || !data) {
       console.error('Error fetching user:', error?.message || 'No user found with that username');
@@ -58,7 +67,7 @@ export const loginUserWithUsername = async (identifier, password) => {
     }
     email = data.email;
     username = data.username;
-    user_id = data.id;  // Assign the user_id
+    user_id = data.id;
   }
 
   try {
@@ -69,15 +78,19 @@ export const loginUserWithUsername = async (identifier, password) => {
     });
 
     const result = await response.json();
-    if (response.ok) {
-      console.log('Login successful:', result.message);
+    console.log('Backend Response:', result);
 
-      // Save user session including user_id
+    if (response.ok) {
       await AsyncStorage.setItem('userSession', JSON.stringify({
-        user_id: result.user_id || user_id,  // Ensure user_id is part of the response or fallback to fetched id
+        user_id: result.user_id || user_id,
         email: email,
         username: username,
       }));
+
+      console.log('User Session Saved:', { user_id: result.user_id || user_id, email, username });
+
+      // Store the user ID in AsyncStorage
+      storeUserData({ id: result.user_id || user_id });
 
       return result;
     } else {
@@ -93,12 +106,6 @@ export const loginUserWithUsername = async (identifier, password) => {
 };
 
 
-
-export const logoutUser = async () => {
-  await supabase.auth.signOut();
-  await AsyncStorage.removeItem('userSession');
-};
-
 export const getUserSession = async () => {
   const session = await AsyncStorage.getItem('userSession');
   if (session) {
@@ -107,6 +114,14 @@ export const getUserSession = async () => {
   }
   return null;
 };
+
+
+
+export const logoutUser = async () => {
+  await supabase.auth.signOut();
+  await AsyncStorage.removeItem('userSession');
+};
+
 
 export const resetPassword = async (email) => {
   const { error } = await supabase.auth.api.resetPasswordForEmail(email);

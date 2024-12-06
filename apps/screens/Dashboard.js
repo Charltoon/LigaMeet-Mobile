@@ -1,41 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('teams');
   const [invitations, setInvitations] = useState([]);
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  const user = {
-    id: 108,
-    username: 'Jay Montebon',
-    sport: 'Basketball',
-    gamesPlayed: 10,
-    points: 15.5,
-    assists: 5.2,
-  };
 
   useEffect(() => {
-    console.log(`Fetching invitations for user ID: ${user.id}`);
-    fetch(`http://192.168.1.2:8000/api/invitations/${user.id}/`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log('Fetched invitations:', data);
-        setInvitations(data);
+    const fetchUserData = async () => {
+      try {
+        const session = await AsyncStorage.getItem('userSession');
+        if (!session) throw new Error('User session not found');
+
+        const { user_id: userId } = JSON.parse(session);
+        if (!userId) throw new Error('User ID not found in session');
+
+        const response = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${userId}`);
+        if (!response.ok) throw new Error(`Error fetching user details: ${response.statusText}`);
+
+        const data = await response.json();
+        setUser({
+          id: userId,
+          username: data.account_details.username,
+          sports: data.account_details.sports || [],
+          gamesPlayed: data.account_details.games_played || 0,
+          points: data.account_details.points || 0,
+          assists: data.account_details.assists || 0,
+        });
+      } catch (error) {
+        console.error(error.message);
+      } finally {
         setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching invitations:', error);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchUserData();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      console.log(`Fetching invitations for user ID: ${user.id}`);
+      fetch(`http://192.168.1.2:8000/api/invitations/${user.id}/`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log('Fetched invitations:', data);
+          setInvitations(data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error fetching invitations:', error);
+          setLoading(false);
+        });
+    }
+  }, [user]); // Add user as a dependency
 
   const handleNotification = (message) => {
     setNotification(message);
@@ -142,7 +169,9 @@ const Dashboard = () => {
             style={styles.avatar}
           />
           <Text style={styles.username}>Welcome, {user.username}!</Text>
-          <Text style={styles.sport}>Sport: {user.sport}</Text>
+          <Text style={styles.sport}>
+            Sports: {user.sports.length > 0 ? user.sports.join(', ') : 'No sports selected'}
+          </Text>
         </View>
 
         <View style={styles.statsContainer}>

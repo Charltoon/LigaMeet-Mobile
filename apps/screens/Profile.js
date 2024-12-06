@@ -371,3 +371,9 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
+
+// TODO Dashboard dynamic (NAME)  done
+// ACCEPT/DECLINE INVITAION
+// DISPLAY TEAMS  done
+// JOIN/LEAVE TEAM
+// SPORTS

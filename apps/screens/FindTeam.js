@@ -1,25 +1,43 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FindTeamScreen = () => {
   const [activeTab, setActiveTab] = useState('myTeam');
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const team = {
-    name: 'Lion',
-    coach: 'Tab Baldwin',
-    members: ['Jay Montebon', 'Manuel Amante', 'Frime Baculao'],
+  const fetchTeams = async () => {
+    setLoading(true);
+    try {
+      const userId = await AsyncStorage.getItem('user_id'); // Assuming user_id is stored in AsyncStorage
+      console.log('User ID:', userId);  
+      if (!userId) throw new Error('User ID not found');
+
+      const response = await fetch(`http://192.168.1.2:8000/api/fetch/teams/?user_id=${userId}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setTeams(data.teams);
+      } else {
+        console.error(data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const teams = [
-    { id: 1, name: 'Eagles', type: 'Basketball' },
-    { id: 2, name: 'Sharks', type: 'Volleyball' },
-  ];
+  useEffect(() => {
+    fetchTeams();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <Text style={styles.title}></Text>
+        <Text style={styles.title}>Find Your Team</Text>
 
         <View style={styles.tabContainer}>
           <TouchableOpacity
@@ -38,36 +56,34 @@ const FindTeamScreen = () => {
 
         {activeTab === 'myTeam' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>My Team: {team.name}</Text>
-            <Text style={styles.coachText}>Coach: {team.coach}</Text>
-            <Text style={styles.membersText}>Members:</Text>
-            {team.members.map((member, index) => (
-              <Text key={index} style={styles.memberItem}>{member}</Text>
-            ))}
-            <TouchableOpacity style={styles.leaveButton}>
-              <Text style={styles.buttonText}>Leave Team</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>My Team</Text>
+            <Text style={styles.placeholderText}>No team assigned yet.</Text>
           </View>
         )}
 
         {activeTab === 'findTeam' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Find Teams</Text>
-            {teams.map((team) => (
-              <View key={team.id} style={styles.teamItem}>
-                <Image
-                  source={{ uri: 'https://via.placeholder.com/50' }}
-                  style={styles.teamLogo}
-                />
-                <View style={styles.teamInfoContainer}>
-                  <Text style={styles.teamName}>{team.name}</Text>
-                  <Text style={styles.teamType}>Type: {team.type}</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color="#3C4858" />
+            ) : (
+              teams.map((team) => (
+                <View key={team.id} style={styles.teamItem}>
+                  <Image
+                    source={{ uri: team.logo_url || 'https://via.placeholder.com/50' }}
+                    style={styles.teamLogo}
+                  />
+                  <View style={styles.teamInfoContainer}>
+                    <Text style={styles.teamName}>{team.name}</Text>
+                    <Text style={styles.teamType}>Type: {team.type}</Text>
+                    <Text style={styles.teamCoach}>Coach: {team.coach}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.viewButton}>
+                    <Text style={styles.buttonText}>View Team</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.viewButton}>
-                  <Text style={styles.buttonText}>View Team</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         )}
       </ScrollView>
@@ -86,7 +102,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2D3D',
     textAlign: 'center',
-    marginVertical: 5,
+    marginVertical: 25,
     fontFamily: 'Roboto',
   },
   tabContainer: {
