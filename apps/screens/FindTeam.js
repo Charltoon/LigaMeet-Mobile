@@ -5,21 +5,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FindTeamScreen = () => {
   const [activeTab, setActiveTab] = useState('myTeam');
-  const [teams, setTeams] = useState([]);
+  const [myTeam, setMyTeam] = useState(null); // To store the user's assigned team
+  const [teams, setTeams] = useState([]); // To store all available teams
   const [loading, setLoading] = useState(false);
 
   const fetchTeams = async () => {
     setLoading(true);
     try {
       const userId = await AsyncStorage.getItem('user_id'); // Assuming user_id is stored in AsyncStorage
-      console.log('User ID:', userId);  
+      console.log('User ID:', userId);
       if (!userId) throw new Error('User ID not found');
 
-      const response = await fetch(`http://192.168.1.2:8000/api/fetch/teams/?user_id=${userId}`);
+      const response = await fetch(`http://192.168.1.8:8000/api/fetch/teams/?user_id=${userId}`);
       const data = await response.json();
 
       if (response.ok) {
         setTeams(data.teams);
+
+        // Find the team assigned to the user
+        const userTeam = data.teams.find((team) =>
+          team.members?.some((member) => member.id === userId)
+        );
+
+        setMyTeam(userTeam || null);
       } else {
         console.error(data.error);
       }
@@ -44,20 +52,40 @@ const FindTeamScreen = () => {
             style={[styles.tab, activeTab === 'myTeam' && styles.activeTab]}
             onPress={() => setActiveTab('myTeam')}
           >
-            <Text style={[styles.tabText, activeTab === 'myTeam' && styles.activeTabText]}>My Team</Text>
+            <Text style={[styles.tabText, activeTab === 'myTeam' && styles.activeTabText]}>
+              My Team
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'findTeam' && styles.activeTab]}
             onPress={() => setActiveTab('findTeam')}
           >
-            <Text style={[styles.tabText, activeTab === 'findTeam' && styles.activeTabText]}>Find Team</Text>
+            <Text style={[styles.tabText, activeTab === 'findTeam' && styles.activeTabText]}>
+              Find Team
+            </Text>
           </TouchableOpacity>
         </View>
 
         {activeTab === 'myTeam' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>My Team</Text>
-            <Text style={styles.placeholderText}>No team assigned yet.</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color="#3C4858" />
+            ) : myTeam ? (
+              <View style={styles.teamItem}>
+                <Image
+                  source={{ uri: myTeam.logo_url || 'https://via.placeholder.com/50' }}
+                  style={styles.teamLogo}
+                />
+                <View style={styles.teamInfoContainer}>
+                  <Text style={styles.teamName}>{myTeam.name}</Text>
+                  <Text style={styles.teamType}>Type: {myTeam.type}</Text>
+                  <Text style={styles.teamCoach}>Coach: {myTeam.coach}</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.placeholderText}>No team assigned yet.</Text>
+            )}
           </View>
         )}
 
@@ -90,6 +118,7 @@ const FindTeamScreen = () => {
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

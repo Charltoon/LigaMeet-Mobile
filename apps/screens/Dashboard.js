@@ -9,20 +9,20 @@ const Dashboard = () => {
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-
+  const [team, setTeam] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const session = await AsyncStorage.getItem('userSession');
         if (!session) throw new Error('User session not found');
-
+  
         const { user_id: userId } = JSON.parse(session);
         if (!userId) throw new Error('User ID not found in session');
-
-        const response = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${userId}`);
+  
+        const response = await fetch(`http://192.168.1.8:8000/api/account/fetch/?user_id=${userId}`);
         if (!response.ok) throw new Error(`Error fetching user details: ${response.statusText}`);
-
+  
         const data = await response.json();
         setUser({
           id: userId,
@@ -32,20 +32,46 @@ const Dashboard = () => {
           points: data.account_details.points || 0,
           assists: data.account_details.assists || 0,
         });
+  
+        // Fetch team data
+        const teamResponse = await fetch(
+          `http://192.168.1.8:8000/api/fetch/teams/?user_id=${userId}`
+        );
+        const teamData = await teamResponse.json();
+        
+  
+        if (teamResponse.ok && teamData.teams.length > 0) {
+          // Ensure the user is a member of the returned team
+          const userTeam = teamData.teams.find((team) =>
+            team.members?.some((member) => member.id === userId)
+          );
+  
+          if (userTeam) {
+            setTeam({
+              ...userTeam,
+              members: userTeam.members || [], // Default to empty array if undefined
+            });
+          } else {
+            setTeam(null); // User not assigned to any team
+          }
+        } else {
+          setTeam(null); // No team data available
+        }
       } catch (error) {
         console.error(error.message);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchUserData();
   }, []);
+  
 
   useEffect(() => {
     if (user) {
       console.log(`Fetching invitations for user ID: ${user.id}`);
-      fetch(`http://192.168.1.2:8000/api/invitations/${user.id}/`)
+      fetch(`http://192.168.1.8:8000/api/invitations/${user.id}/`)
         .then((response) => {
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -54,7 +80,10 @@ const Dashboard = () => {
         })
         .then((data) => {
           console.log('Fetched invitations:', data);
-          setInvitations(data);
+          const pendingInvitations = data.filter(
+            (invitation) => invitation.status === 'Pending'
+          );
+          setInvitations(pendingInvitations);
           setLoading(false);
         })
         .catch((error) => {
@@ -63,6 +92,7 @@ const Dashboard = () => {
         });
     }
   }, [user]); // Add user as a dependency
+   // Add user as a dependency
 
   const handleNotification = (message) => {
     setNotification(message);
@@ -70,7 +100,7 @@ const Dashboard = () => {
   };
 
   const handleAccept = (invitationId) => {
-    fetch(`http://192.168.1.2:8000/api/invitations/update/`, {
+    fetch(`http://192.168.1.8:8000/api/invitations/update/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -95,6 +125,16 @@ const Dashboard = () => {
               : invitation
           )
         );
+  
+        if (data.team) {
+          setTeam({
+            id: data.team.id,
+            name: data.team.name,
+            coach: data.team.coach,
+            members: data.team.members,
+          });
+        }
+  
         handleNotification('Invitation accepted successfully.');
       })
       .catch((error) => {
@@ -102,9 +142,10 @@ const Dashboard = () => {
         handleNotification('Failed to accept invitation.');
       });
   };
+  
 
   const handleDecline = (invitationId) => {
-    fetch(`http://192.168.1.2:8000/api/invitations/update/`, {
+    fetch(`http://192.168.1.8:8000/api/invitations/update/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -120,8 +161,7 @@ const Dashboard = () => {
         }
         return response.json();
       })
-      .then((data) => {
-        console.log('Invitation declined:', data);
+      .then(() => {
         setInvitations((prevInvitations) =>
           prevInvitations.map((invitation) =>
             invitation.id === invitationId
@@ -129,13 +169,14 @@ const Dashboard = () => {
               : invitation
           )
         );
-        handleNotification('Invitation declined successfully.');
+        handleNotification('Invitation declined.');
       })
       .catch((error) => {
         console.error('Error declining invitation:', error);
         handleNotification('Failed to decline invitation.');
       });
   };
+  
 
   
 
@@ -146,12 +187,6 @@ const Dashboard = () => {
       </SafeAreaView>
     );
   }
-
-  const team = {
-    name: 'Lion',
-    coach: 'Tab Baldwin',
-    members: ['Jay Montebon', 'Manuel Amante', 'Frime Baculao'],
-  };
 
   const recentActivities = [
     { id: 1, description: 'Joined a new team', timestamp: '2023-11-14 14:30' },
@@ -190,13 +225,24 @@ const Dashboard = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Team: {team.name}</Text>
-          <Text style={styles.coachText}>Coach: {team.coach}</Text>
-          <Text style={styles.membersText}>Members:</Text>
-          {team.members.map((member, index) => (
-            <Text key={index} style={styles.memberItem}>{member}</Text>
-          ))}
+          <Text style={styles.sectionTitle}>
+            My Team: {team ? team.name : 'No team assigned'}
+          </Text>
+          {team ? (
+            <>  
+              <Text style={styles.coachText}>Coach: {team.coach}</Text>
+              <Text style={styles.membersText}>Members:</Text>
+              {team.members.map((member, index) => (
+                <Text key={index} style={styles.memberItem}>
+                  {member.name} {/* Assuming member has a 'username' property */}
+                </Text>
+              ))}
+            </>
+          ) : (
+            <Text style={styles.placeholderText}>You are not currently part of any team.</Text>
+          )}
         </View>
+
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
@@ -210,30 +256,32 @@ const Dashboard = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Invitations</Text>
-          {invitations.map((invitation) => (
-            invitation.status === 'Pending' && (
+          {invitations.length > 0 ? (
+            invitations.map((invitation) => (
               <View key={invitation.id} style={styles.invitation}>
                 <Text style={styles.invitationText}>
-                  Team Name: {invitation.team_name} invited you to join
+                  Team Name: {invitation.team_name}
                 </Text>
                 <Text>Sent At: {new Date(invitation.sent_at).toLocaleString()}</Text>
                 <View style={styles.invitationButtons}>
-                  <TouchableOpacity 
-                    style={[styles.button, styles.acceptButton]} 
+                  <TouchableOpacity
+                    style={[styles.button, styles.acceptButton]}
                     onPress={() => handleAccept(invitation.id)}
                   >
                     <Text style={styles.buttonText}>Accept</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.button, styles.declineButton]} 
+                  <TouchableOpacity
+                    style={[styles.button, styles.declineButton]}
                     onPress={() => handleDecline(invitation.id)}
                   >
                     <Text style={styles.buttonText}>Decline</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            )
-          ))}
+            ))
+          ) : (
+            <Text>No invitations available.</Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
