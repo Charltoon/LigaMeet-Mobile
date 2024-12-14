@@ -10,7 +10,7 @@ const ChooseSportScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchSports = async () => {
       try {
-        const response = await fetch('http://192.168.1.8:8000/api/sports/'); // Replace with your API URL
+        const response = await fetch('http://192.168.1.2:8000/api/sports/'); // Replace with your API URL
         const data = await response.json();
         setSports(data);
       } catch (error) {

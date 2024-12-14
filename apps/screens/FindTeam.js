@@ -1,33 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FindTeamScreen = () => {
-  const [activeTab, setActiveTab] = useState('myTeam');
-  const [myTeam, setMyTeam] = useState(null); // To store the user's assigned team
   const [teams, setTeams] = useState([]); // To store all available teams
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false); // To control modal visibility
+  const [selectedTeam, setSelectedTeam] = useState(null); // To store the selected team details
 
   const fetchTeams = async () => {
     setLoading(true);
     try {
-      const userId = await AsyncStorage.getItem('user_id'); // Assuming user_id is stored in AsyncStorage
-      console.log('User ID:', userId);
-      if (!userId) throw new Error('User ID not found');
+      const session = await AsyncStorage.getItem('userSession');
+      if (!session) throw new Error('User session not found');
 
-      const response = await fetch(`http://192.168.1.8:8000/api/fetch/teams/?user_id=${userId}`);
+      const { user_id: userId } = JSON.parse(session);
+      if (!userId) throw new Error('User ID not found in session');
+
+      const response = await fetch(`http://192.168.1.2:8000/api/fetch/teams/?user_id=${userId}`);
       const data = await response.json();
 
       if (response.ok) {
         setTeams(data.teams);
-
-        // Find the team assigned to the user
-        const userTeam = data.teams.find((team) =>
-          team.members?.some((member) => member.id === userId)
-        );
-
-        setMyTeam(userTeam || null);
       } else {
         console.error(data.error);
       }
@@ -36,6 +40,47 @@ const FindTeamScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleJoinRequest = async (teamId) => {
+    setLoading(true); // Optionally, show a loading indicator during the request
+    try {
+      const session = await AsyncStorage.getItem('userSession');
+      if (!session) throw new Error('User session not found');
+  
+      const { user_id: userId } = JSON.parse(session);
+      if (!userId) throw new Error('User ID not found in session');
+  
+      const response = await fetch('http://192.168.1.2:8000/api/join/team/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          user_id: userId,
+          team_id: teamId,
+        }).toString(),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message || 'Join request sent successfully!');
+        setModalVisible(false); // Close the modal on success
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to send join request.');
+      }
+    } catch (error) {
+      console.error('Error sending join request:', error);
+      alert('An error occurred while sending the join request.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTeamDetails = (team) => {
+    setSelectedTeam(team);
+    setModalVisible(true);
   };
 
   useEffect(() => {
@@ -47,74 +92,70 @@ const FindTeamScreen = () => {
       <ScrollView>
         <Text style={styles.title}>Find Your Team</Text>
 
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'myTeam' && styles.activeTab]}
-            onPress={() => setActiveTab('myTeam')}
-          >
-            <Text style={[styles.tabText, activeTab === 'myTeam' && styles.activeTabText]}>
-              My Team
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'findTeam' && styles.activeTab]}
-            onPress={() => setActiveTab('findTeam')}
-          >
-            <Text style={[styles.tabText, activeTab === 'findTeam' && styles.activeTabText]}>
-              Find Team
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {activeTab === 'myTeam' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>My Team</Text>
-            {loading ? (
-              <ActivityIndicator size="large" color="#3C4858" />
-            ) : myTeam ? (
-              <View style={styles.teamItem}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Find Teams</Text>
+          {loading ? (
+            <ActivityIndicator size="large" color="#3C4858" />
+          ) : (
+            teams.map((team) => (
+              <View key={team.id} style={styles.teamItem}>
                 <Image
-                  source={{ uri: myTeam.logo_url || 'https://via.placeholder.com/50' }}
+                  source={{ uri: team.logo_url || 'https://via.placeholder.com/50' }}
                   style={styles.teamLogo}
                 />
                 <View style={styles.teamInfoContainer}>
-                  <Text style={styles.teamName}>{myTeam.name}</Text>
-                  <Text style={styles.teamType}>Type: {myTeam.type}</Text>
-                  <Text style={styles.teamCoach}>Coach: {myTeam.coach}</Text>
+                  <Text style={styles.teamName}>{team.name}</Text>
+                  <Text style={styles.teamType}>Type: {team.type}</Text>
+                  <Text style={styles.teamCoach}>Coach: {team.coach}</Text>
                 </View>
+                <TouchableOpacity
+                  style={styles.viewButton}
+                  onPress={() => fetchTeamDetails(team)}
+                >
+                  <Text style={styles.buttonText}>View Team</Text>
+                </TouchableOpacity>
               </View>
-            ) : (
-              <Text style={styles.placeholderText}>No team assigned yet.</Text>
-            )}
-          </View>
-        )}
-
-        {activeTab === 'findTeam' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Find Teams</Text>
-            {loading ? (
-              <ActivityIndicator size="large" color="#3C4858" />
-            ) : (
-              teams.map((team) => (
-                <View key={team.id} style={styles.teamItem}>
-                  <Image
-                    source={{ uri: team.logo_url || 'https://via.placeholder.com/50' }}
-                    style={styles.teamLogo}
-                  />
-                  <View style={styles.teamInfoContainer}>
-                    <Text style={styles.teamName}>{team.name}</Text>
-                    <Text style={styles.teamType}>Type: {team.type}</Text>
-                    <Text style={styles.teamCoach}>Coach: {team.coach}</Text>
-                  </View>
-                  <TouchableOpacity style={styles.viewButton}>
-                    <Text style={styles.buttonText}>View Team</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
-            )}
-          </View>
-        )}
+            ))
+          )}
+        </View>
       </ScrollView>
+
+      {/* Modal for displaying team details */}
+      {selectedTeam && (
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{selectedTeam.name}</Text>
+              <Text style={styles.modalSubtitle}>Coach: {selectedTeam.coach}</Text>
+              <Text style={styles.modalSectionTitle}>Team Members:</Text>
+              {selectedTeam.members.map((member, index) => (
+                <Text key={index} style={styles.modalText}>
+                  - {member.name}
+                </Text>
+              ))}
+              <TouchableOpacity
+                style={styles.joinButton}
+                onPress={() => handleJoinRequest(selectedTeam.id)}
+              >
+                <Text style={styles.joinButtonText}>Join Team</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -134,29 +175,6 @@ const styles = StyleSheet.create({
     marginVertical: 25,
     fontFamily: 'Roboto',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    backgroundColor: '#E5E9F2',
-    borderRadius: 8,
-    marginHorizontal: 5,
-  },
-  activeTab: {
-    backgroundColor: '#3C4858',
-  },
-  tabText: {
-    fontWeight: 'bold',
-    color: '#1F2D3D',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
-  },
   section: {
     padding: 20,
     backgroundColor: '#FFFFFF',
@@ -172,22 +190,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#1F2D3D',
-  },
-  coachText: {
-    fontSize: 14,
-    color: '#3C4858',
-    marginBottom: 5,
-  },
-  membersText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3C4858',
-    marginBottom: 5,
-  },
-  memberItem: {
-    color: '#3C4858',
-    marginLeft: 10,
-    marginBottom: 5,
   },
   teamItem: {
     flexDirection: 'row',
@@ -219,14 +221,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#3C4858',
   },
-  leaveButton: {
-    backgroundColor: '#F44336',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 15,
-    alignItems: 'center',
-  },
   viewButton: {
     backgroundColor: '#4CAF50',
     paddingVertical: 8,
@@ -237,6 +231,65 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  joinButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  joinButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#FF4136',
+    borderRadius: 8,
+  },
+  closeButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

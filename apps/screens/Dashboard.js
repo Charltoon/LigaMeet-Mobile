@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Alert, Text, StyleSheet, ScrollView, Image, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -8,99 +8,97 @@ const Dashboard = () => {
   const [invitations, setInvitations] = useState([]);
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const session = await AsyncStorage.getItem('userSession');
-        if (!session) throw new Error('User session not found');
-  
-        const { user_id: userId } = JSON.parse(session);
-        if (!userId) throw new Error('User ID not found in session');
-  
-        const response = await fetch(`http://192.168.1.8:8000/api/account/fetch/?user_id=${userId}`);
-        if (!response.ok) throw new Error(`Error fetching user details: ${response.statusText}`);
-  
-        const data = await response.json();
-        setUser({
-          id: userId,
-          username: data.account_details.username,
-          sports: data.account_details.sports || [],
-          gamesPlayed: data.account_details.games_played || 0,
-          points: data.account_details.points || 0,
-          assists: data.account_details.assists || 0,
-        });
-  
-        // Fetch team data
-        const teamResponse = await fetch(
-          `http://192.168.1.8:8000/api/fetch/teams/?user_id=${userId}`
-        );
-        const teamData = await teamResponse.json();
-        
-  
-        if (teamResponse.ok && teamData.teams.length > 0) {
-          // Ensure the user is a member of the returned team
-          const userTeam = teamData.teams.find((team) =>
-            team.members?.some((member) => member.id === userId)
-          );
-  
-          if (userTeam) {
-            setTeam({
-              ...userTeam,
-              members: userTeam.members || [], // Default to empty array if undefined
-            });
-          } else {
-            setTeam(null); // User not assigned to any team
-          }
-        } else {
-          setTeam(null); // No team data available
-        }
-      } catch (error) {
-        console.error(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchUserData();
-  }, []);
-  
+  // Consolidated data fetching function
+  const fetchAllData = useCallback(async () => {
+    try {
+      // Fetch user session
+      const session = await AsyncStorage.getItem('userSession');
+      if (!session) throw new Error('User session not found');
 
-  useEffect(() => {
-    if (user) {
-      console.log(`Fetching invitations for user ID: ${user.id}`);
-      fetch(`http://192.168.1.8:8000/api/invitations/${user.id}/`)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          console.log('Fetched invitations:', data);
-          const pendingInvitations = data.filter(
-            (invitation) => invitation.status === 'Pending'
-          );
-          setInvitations(pendingInvitations);
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error('Error fetching invitations:', error);
-          setLoading(false);
-        });
+      const { user_id: userId } = JSON.parse(session);
+      if (!userId) throw new Error('User ID not found in session');
+
+      // Fetch user details
+      const userResponse = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${userId}`);
+      if (!userResponse.ok) throw new Error(`Error fetching user details: ${userResponse.statusText}`);
+
+      const userData = await userResponse.json();
+      const userDetails = {
+        id: userId,
+        username: userData.account_details.username,
+        sports: userData.account_details.sports || [],
+        gamesPlayed: userData.account_details.games_played || 0,
+        points: userData.account_details.points || 0,
+        assists: userData.account_details.assists || 0,
+      };
+      setUser(userDetails);
+
+      // Fetch team data
+      const teamResponse = await fetch(
+        `http://192.168.1.2:8000/api/fetch/teams/?user_id=${userId}`
+      );
+      const teamData = await teamResponse.json();
+
+      if (teamResponse.ok && teamData.teams.length > 0) {
+        const userTeam = teamData.teams.find((team) =>
+          team.members?.some((member) => member.id === userId)
+        );
+
+        if (userTeam) {
+          setTeam({
+            ...userTeam,
+            members: userTeam.members || [],
+          });
+        } else {
+          setTeam(null);
+        }
+      } else {
+        setTeam(null);
+      }
+
+      // Fetch invitations
+      const invitationsResponse = await fetch(`http://192.168.1.2:8000/api/invitations/${userId}/`);
+      if (!invitationsResponse.ok) {
+        throw new Error(`HTTP error! status: ${invitationsResponse.status}`);
+      }
+      const invitationsData = await invitationsResponse.json();
+      const pendingInvitations = invitationsData.filter(
+        (invitation) => invitation.status === 'Pending'
+      );
+      setInvitations(pendingInvitations);
+
+    } catch (error) {
+      console.error('Error fetching data:', error.message);
+      handleNotification('Failed to refresh data.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, [user]); // Add user as a dependency
-   // Add user as a dependency
+  }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  // Pull to refresh handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchAllData();
+  }, [fetchAllData]);
 
   const handleNotification = (message) => {
     setNotification(message);
-    setTimeout(() => setNotification(null), 3000); // Clear notification after 3 seconds
+    setTimeout(() => setNotification(null), 3000);
   };
 
+  // Keep existing methods for handling accept, decline, leave team, etc.
   const handleAccept = (invitationId) => {
-    fetch(`http://192.168.1.8:8000/api/invitations/update/`, {
+    fetch(`http://192.168.1.2:8000/api/invitations/update/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -142,10 +140,9 @@ const Dashboard = () => {
         handleNotification('Failed to accept invitation.');
       });
   };
-  
 
   const handleDecline = (invitationId) => {
-    fetch(`http://192.168.1.8:8000/api/invitations/update/`, {
+    fetch(`http://192.168.1.2:8000/api/invitations/update/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -176,10 +173,57 @@ const Dashboard = () => {
         handleNotification('Failed to decline invitation.');
       });
   };
-  
 
+  const handleLeaveTeam = async (teamId) => {
+    if (!teamId || typeof teamId !== 'number') {
+      console.error('Invalid team ID');
+      return;
+    }
   
-
+    Alert.alert(
+      'Leave Team',
+      'Are you sure you want to leave this team?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: async () => {
+            try {
+              const response = await fetch('http://192.168.1.2:8000/api/team/leave/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${user.token}`, // Include token if required
+                },
+                body: JSON.stringify({
+                  user_id: user.id,
+                  team_id: teamId,
+                }),
+              });
+  
+              const data = await response.json();
+  
+              if (response.ok) {
+                setNotification(data.message);
+                setTeam(null);
+              } else {
+                console.error('Error response from server:', data);
+                setNotification(data.error || 'Failed to leave the team.');
+              }
+            } catch (error) {
+              console.error('Error leaving team:', error);
+              setNotification('An error occurred while leaving the team.');
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+  
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -194,8 +238,18 @@ const Dashboard = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+<SafeAreaView style={styles.container}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#9Bd35A', '#689F38']} // Android colors
+            tintColor="#689F38" // iOS color
+            title="Pull to refresh" // iOS title
+          />
+        }
+      >
         <Text style={styles.title}>Player Dashboard</Text>
         
         <View style={styles.header}>
@@ -229,17 +283,25 @@ const Dashboard = () => {
             My Team: {team ? team.name : 'No team assigned'}
           </Text>
           {team ? (
-            <>  
+            <>
               <Text style={styles.coachText}>Coach: {team.coach}</Text>
               <Text style={styles.membersText}>Members:</Text>
               {team.members.map((member, index) => (
                 <Text key={index} style={styles.memberItem}>
-                  {member.name} {/* Assuming member has a 'username' property */}
+                  {member.name}
                 </Text>
               ))}
+              <TouchableOpacity
+                style={[styles.button, styles.leaveButton]}
+                onPress={() => handleLeaveTeam(team.id)}
+              >
+                <Text style={styles.buttonText}>Leave Team</Text>
+              </TouchableOpacity>
             </>
           ) : (
-            <Text style={styles.placeholderText}>You are not currently part of any team.</Text>
+            <Text style={styles.placeholderText}>
+              You are not currently part of any team.
+            </Text>
           )}
         </View>
 
@@ -437,6 +499,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  leaveButton: {
+    marginTop: 15,
+    backgroundColor: "#FF3B30",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

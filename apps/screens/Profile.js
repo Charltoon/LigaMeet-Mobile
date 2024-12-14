@@ -27,7 +27,7 @@ const ProfileScreen = ({ navigation }) => {
       const session = await getUserSession();
       if (session) {
         try {
-          const response = await fetch(`http://192.168.1.8:8000/api/account/fetch/?user_id=${session.user_id}`);
+          const response = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${session.user_id}`);
           const data = await response.json();
 
           if (response.ok) {
@@ -125,7 +125,7 @@ const ProfileScreen = ({ navigation }) => {
         console.log('Sending payload:', payload);
 
         // Send the PUT request to the backend
-        const response = await fetch('http://192.168.1.8:8000/api/account/update/', {
+        const response = await fetch('http://192.168.1.2:8000/api/account/update/', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
