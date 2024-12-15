@@ -10,7 +10,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState(null);
-  const [team, setTeam] = useState(null);
+  const [teams, setTeams] = useState(null);
 
   // Consolidated data fetching function
   const fetchAllData = useCallback(async () => {
@@ -38,26 +38,27 @@ const Dashboard = () => {
       setUser(userDetails);
 
       // Fetch team data
-      const teamResponse = await fetch(
-        `http://192.168.1.2:8000/api/fetch/teams/?user_id=${userId}`
-      );
+      const teamResponse = await fetch(`http://192.168.1.2:8000/api/fetch/teams/?user_id=${userId}`);
       const teamData = await teamResponse.json();
 
       if (teamResponse.ok && teamData.teams.length > 0) {
-        const userTeam = teamData.teams.find((team) =>
+        // Set all teams for the user
+        const userTeams = teamData.teams.filter((team) =>
           team.members?.some((member) => member.id === userId)
         );
 
-        if (userTeam) {
-          setTeam({
-            ...userTeam,
-            members: userTeam.members || [],
-          });
+        if (userTeams.length > 0) {
+          setTeams(userTeams.map((team) => ({
+            id: team.id,
+            name: team.name,
+            coach: team.coach,
+            members: team.members || [],
+          })));
         } else {
-          setTeam(null);
+          setTeams([]);
         }
       } else {
-        setTeam(null);
+        setTeams([]);
       }
 
       // Fetch invitations
@@ -96,6 +97,56 @@ const Dashboard = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const handleLeaveTeam = async (teamId) => {
+    if (!teamId || typeof teamId !== 'number') {
+      console.error('Invalid team ID');
+      return;
+    }
+  
+    Alert.alert(
+      'Leave Team',
+      'Are you sure you want to leave this team?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: async () => {
+            try {
+              const response = await fetch('http://192.168.1.2:8000/api/team/leave/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${user.token}`, // Include token if required
+                },
+                body: JSON.stringify({
+                  user_id: user.id,
+                  team_id: teamId,
+                }),
+              });
+  
+              const data = await response.json();
+  
+              if (response.ok) {
+                setNotification(data.message);
+                setTeams(null);
+              } else {
+                console.error('Error response from server:', data);
+                setNotification(data.error || 'Failed to leave the team.');
+              }
+            } catch (error) {
+              console.error('Error leaving team:', error);
+              setNotification('An error occurred while leaving the team.');
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
   // Keep existing methods for handling accept, decline, leave team, etc.
   const handleAccept = (invitationId) => {
     fetch(`http://192.168.1.2:8000/api/invitations/update/`, {
@@ -125,7 +176,7 @@ const Dashboard = () => {
         );
   
         if (data.team) {
-          setTeam({
+          setTeams({
             id: data.team.id,
             name: data.team.name,
             coach: data.team.coach,
@@ -174,55 +225,6 @@ const Dashboard = () => {
       });
   };
 
-  const handleLeaveTeam = async (teamId) => {
-    if (!teamId || typeof teamId !== 'number') {
-      console.error('Invalid team ID');
-      return;
-    }
-  
-    Alert.alert(
-      'Leave Team',
-      'Are you sure you want to leave this team?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Yes',
-          onPress: async () => {
-            try {
-              const response = await fetch('http://192.168.1.2:8000/api/team/leave/', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${user.token}`, // Include token if required
-                },
-                body: JSON.stringify({
-                  user_id: user.id,
-                  team_id: teamId,
-                }),
-              });
-  
-              const data = await response.json();
-  
-              if (response.ok) {
-                setNotification(data.message);
-                setTeam(null);
-              } else {
-                console.error('Error response from server:', data);
-                setNotification(data.error || 'Failed to leave the team.');
-              }
-            } catch (error) {
-              console.error('Error leaving team:', error);
-              setNotification('An error occurred while leaving the team.');
-            }
-          },
-        },
-      ],
-      { cancelable: false }
-    );
-  };
   
   if (loading) {
     return (
@@ -279,31 +281,36 @@ const Dashboard = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            My Team: {team ? team.name : 'No team assigned'}
-          </Text>
-          {team ? (
-            <>
-              <Text style={styles.coachText}>Coach: {team.coach}</Text>
-              <Text style={styles.membersText}>Members:</Text>
-              {team.members.map((member, index) => (
-                <Text key={index} style={styles.memberItem}>
-                  {member.name}
-                </Text>
+          <Text style={styles.sectionTitle}>My Teams</Text>
+          {teams && teams.length > 0 ? (
+            <ScrollView horizontal>
+              {teams.map((teamItem, index) => (
+                <View key={index} style={styles.teamCard}>
+                  <Text style={styles.teamName}>{teamItem.name}</Text>
+                  <Text style={styles.coachText}>Coach: {teamItem.coach}</Text>
+                  <Text style={styles.membersText}>Members:</Text>
+                  {teamItem.members.map((member, idx) => (
+                    <Text key={idx} style={styles.memberItem}>
+                      {member.name}
+                    </Text>
+                  ))}
+                  <TouchableOpacity
+                    style={styles.leaveButton}
+                    onPress={() => handleLeaveTeam(teamItem.id)}
+                  >
+                    <Text style={styles.buttonText}>Leave Team</Text>
+                  </TouchableOpacity>
+                </View>
               ))}
-              <TouchableOpacity
-                style={[styles.button, styles.leaveButton]}
-                onPress={() => handleLeaveTeam(team.id)}
-              >
-                <Text style={styles.buttonText}>Leave Team</Text>
-              </TouchableOpacity>
-            </>
+            </ScrollView>
           ) : (
             <Text style={styles.placeholderText}>
               You are not currently part of any team.
             </Text>
           )}
         </View>
+
+
 
 
         <View style={styles.section}>
@@ -512,6 +519,60 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  teamCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 15,
+    margin: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+    alignItems: 'flex-start',
+  },
+  teamName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2D3D',
+    marginBottom: 5,
+  },
+  coachText: {
+    fontSize: 14,
+    color: '#3C4858',
+    marginBottom: 5,
+  },
+  membersText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3C4858',
+    marginBottom: 5,
+  },
+  memberItem: {
+    color: '#3C4858',
+    fontSize: 14,
+    marginBottom: 5,
+    paddingLeft: 10,
+  },
+  switchButton: {
+    backgroundColor: '#007AFF',
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  leaveButton: {
+    backgroundColor: '#FF3B30',
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
 
