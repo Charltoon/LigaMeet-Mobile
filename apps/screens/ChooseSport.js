@@ -7,21 +7,6 @@ const ChooseSportScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [selectedSport, setSelectedSport] = useState(null);
 
-  useEffect(() => {
-    const checkSportSelection = async () => {
-      try {
-        const hasChosenSport = await AsyncStorage.getItem('hasChosenSport');
-        if (hasChosenSport) {
-          navigation.navigate('Main'); // Redirect to the main screen
-        }
-      } catch (error) {
-        console.error('Error checking sport selection:', error);
-      }
-    };
-    checkSportSelection();
-  }, []);
-
-  
   // Fetch sports from API
   useEffect(() => {
     const fetchSports = async () => {
@@ -79,7 +64,6 @@ const handleConfirm = async () => {
             console.log('Backend Response:', data);   
 
             if (response.ok) {
-                await AsyncStorage.setItem('hasChosenSport', 'true');
                 alert('Sport selection saved successfully!');
                 navigation.navigate('Main'); // Navigate to the main screen
             } else {
