@@ -30,7 +30,6 @@ const Dashboard = () => {
       const userDetails = {
         id: userId,
         username: userData.account_details.username,
-        sports: userData.account_details.sports || [],
         gamesPlayed: userData.account_details.games_played || 0,
         points: userData.account_details.points || 0,
         assists: userData.account_details.assists || 0,
@@ -260,9 +259,6 @@ const Dashboard = () => {
             style={styles.avatar}
           />
           <Text style={styles.username}>Welcome, {user.username}!</Text>
-          <Text style={styles.sport}>
-            Sports: {user.sports.length > 0 ? user.sports.join(', ') : 'No sports selected'}
-          </Text>
         </View>
 
         <View style={styles.statsContainer}>

@@ -17,6 +17,7 @@ const ProfileScreen = ({ navigation }) => {
     address: '',
     phone: '',
     profilePicture: '',
+    sports: [],
   });
 
   const [loading, setLoading] = useState(true);
@@ -25,13 +26,18 @@ const ProfileScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchUser = async () => {
       const session = await getUserSession();
+      console.log('Session:', session);
       if (session) {
         try {
           const response = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${session.user_id}`);
           const data = await response.json();
-
+    
           if (response.ok) {
-            setUser({
+            console.log('Full response data:', data);
+            console.log('Sports before setting:', data.account_details.sports);
+    
+            setUser(prevUser => ({
+              ...prevUser,
               username: data.account_details.username,
               email: data.account_details.email,
               firstName: data.account_details.first_name,
@@ -42,18 +48,26 @@ const ProfileScreen = ({ navigation }) => {
               address: data.account_details.address,
               phone: data.account_details.phone,
               profilePicture: data.account_details.image_url || '',
-            });
+              sports: data.account_details.sports || [],  // Ensure this field exists in the response
+            }));
+
+            console.log('Sports data:', data.account_details.sports);
           } else {
             console.error('Error fetching user details:', data.error);
+            Alert.alert('Error', 'Failed to fetch user details');
           }
         } catch (error) {
           console.error('Error fetching user details:', error);
+          Alert.alert('Error', 'Failed to connect to server');
         }
       }
       setLoading(false);
     };
+    
     fetchUser();
   }, []);
+
+  
 
   const handleInputChange = (field, value) => {
     setUser({ ...user, [field]: value });
@@ -120,6 +134,7 @@ const ProfileScreen = ({ navigation }) => {
             address: user.address,
             phone: user.phone,
             profile_picture: user.profilePicture || "",  // Handle the profile picture
+            sports: user.sports,
         };
 
         console.log('Sending payload:', payload);
@@ -174,6 +189,15 @@ const ProfileScreen = ({ navigation }) => {
             )}
             <Text style={styles.changePhotoText}>Change Photo</Text>
           </TouchableOpacity>
+
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Sport</Text>
+            <TextInput
+              style={[styles.input, styles.readOnlyInput]}
+              value={user.sports && user.sports.length > 0 ? user.sports.join(', ') : 'No sports selected'}
+              editable={false}
+            />
+          </View>
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Username</Text>
@@ -367,6 +391,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  readOnlyInput: {
+    backgroundColor: '#f5f5f5',
+    color: '#000000', // Ensure text is black
+    fontSize: 16,     // Make sure text size is readable
   },
 });
 

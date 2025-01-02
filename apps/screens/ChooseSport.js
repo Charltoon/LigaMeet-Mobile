@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, StatusBar, Image, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ChooseSportScreen = ({ navigation }) => {
   const [sports, setSports] = useState([]);
@@ -26,13 +27,58 @@ const ChooseSportScreen = ({ navigation }) => {
     setSelectedSport(sport);
   };
 
-  const handleConfirm = () => {
-    if (selectedSport) {
-      navigation.navigate('Main');
-    } else {
-      alert('Please select a sport first');
+const handleConfirm = async () => {
+    try {
+        // Retrieve the userId from the session stored in AsyncStorage
+        const userId = await AsyncStorage.getItem('user_id'); // Retrieve the userId
+        console.log('User ID from session:', userId)
+        if (!userId) {
+          console.log('User ID is missing from session storage.');
+          return;  // Handle missing user_id
+      } 
+
+        if (selectedSport) {
+            // Get the sport data from the list of sports
+            const sportData = sports.find((sport) => sport.SPORT_NAME === selectedSport);
+            if (!sportData) {
+                alert('Selected sport not found');
+                return;
+            }
+
+            // Log the data before sending to ensure it's correct
+            console.log("Sending data to backend:", { user_id: userId, sport_id: sportData.id });
+
+            // Send the request to update the user sport profile
+            const response = await fetch('http://192.168.1.2:8000/api/update/user/sport/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,       // Correct user ID from session
+                    sport_id: sportData.id, // Correct sport ID
+                }),
+            });
+
+            const data = await response.json();
+            console.log('Backend Response:', data);   
+
+            if (response.ok) {
+                alert('Sport selection saved successfully!');
+                navigation.navigate('Main'); // Navigate to the main screen
+            } else {
+                const errorData = await response.json();
+                console.error('Error saving sport:', errorData.error);
+                alert(errorData.error || 'Failed to save sport selection.');
+            }
+        } else {
+            alert('Please select a sport first');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while saving your selection.');
     }
-  };
+};
 
   const renderSportItem = ({ item }) => (
     <TouchableOpacity
@@ -60,6 +106,7 @@ const ChooseSportScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Display loading indicator while fetching sports
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
