@@ -27,15 +27,15 @@ const ChooseSportScreen = ({ navigation }) => {
     setSelectedSport(sport);
   };
 
-const handleConfirm = async () => {
+  const handleConfirm = async () => {
     try {
         // Retrieve the userId from the session stored in AsyncStorage
         const userId = await AsyncStorage.getItem('user_id'); // Retrieve the userId
-        console.log('User ID from session:', userId)
+        console.log('User ID from session:', userId);
         if (!userId) {
-          console.log('User ID is missing from session storage.');
-          return;  // Handle missing user_id
-      } 
+            console.log('User ID is missing from session storage.');
+            return; // Handle missing user_id
+        }
 
         if (selectedSport) {
             // Get the sport data from the list of sports
@@ -61,15 +61,14 @@ const handleConfirm = async () => {
             });
 
             const data = await response.json();
-            console.log('Backend Response:', data);   
+            console.log('Backend Response:', data);
 
             if (response.ok) {
                 alert('Sport selection saved successfully!');
                 navigation.navigate('Main'); // Navigate to the main screen
             } else {
-                const errorData = await response.json();
-                console.error('Error saving sport:', errorData.error);
-                alert(errorData.error || 'Failed to save sport selection.');
+                console.error('Error saving sport:', data.error);
+                alert(data.error || 'Failed to save sport selection.');
             }
         } else {
             alert('Please select a sport first');
@@ -79,6 +78,7 @@ const handleConfirm = async () => {
         alert('An error occurred while saving your selection.');
     }
 };
+
 
   const renderSportItem = ({ item }) => (
     <TouchableOpacity

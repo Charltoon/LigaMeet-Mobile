@@ -85,6 +85,7 @@ export const loginUserWithUsername = async (identifier, password) => {
         user_id: result.user_id || user_id,
         email: email,
         username: username,
+        first_login: result.first_login,
       }));
 
       console.log('User Session Saved:', { user_id: result.user_id || user_id, email, username });
@@ -92,7 +93,13 @@ export const loginUserWithUsername = async (identifier, password) => {
       // Store the user ID in AsyncStorage
       storeUserData({ id: result.user_id || user_id });
 
-      return result;
+      return {
+        user_id: result.user_id || user_id,
+        email,
+        username,
+        first_login: result.first_login,
+      };
+      
     } else {
       console.error('Login error:', result.error);
       Alert.alert('Error', result.error || 'Invalid login credentials');

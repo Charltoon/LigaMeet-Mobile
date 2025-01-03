@@ -10,21 +10,28 @@ const Login = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!identifier || !password) {
-      Alert.alert('Error', 'Please enter your username/email and password.');
-      return;
+        Alert.alert('Error', 'Please enter your username/email and password.');
+        return;
     }
     setLoading(true);
     try {
-      const user = await loginUserWithUsername(identifier, password);
-      setMessage(`Welcome, ${user.email || user.username}!`);
-      navigation.navigate('ChooseSport');
+        const user = await loginUserWithUsername(identifier, password);
+        setMessage(`Welcome, ${user.email || user.username}!`);
+
+        // Navigate based on the first_login flag
+        if (user.first_login) {
+            navigation.navigate('ChooseSport');
+          } else {
+            navigation.navigate('Main', { screen: 'Dashboard' });
+        }
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Login Error', 'Invalid username/email or password. Please try again.');
+        console.error('Login error:', error);
+        Alert.alert('Login Error', 'Invalid username/email or password. Please try again.');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
 
   return (
     <View style={styles.container}>
