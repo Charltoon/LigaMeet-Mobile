@@ -10,7 +10,7 @@ const storeUserData = async (userData) => {
     console.error('Error storing user ID:', error);
   }
 };
-// auth.js
+
 export const registerUser = async (username, email, password) => {
   try {
     let controller = new AbortController();
@@ -31,6 +31,14 @@ export const registerUser = async (username, email, password) => {
     if (response.status === 200) {
       console.log(json.message);
       Alert.alert('Success', 'User registered successfully');
+      
+      // Store user ID after successful registration
+      if (json.user_id) {
+        await storeUserData({ id: json.user_id });
+      } else {
+        console.error('user_id missing in response');
+        Alert.alert('Error', 'user_id missing in response');
+      }
     } else {
       console.error(json.error);
       Alert.alert('Error', json.error);
@@ -45,6 +53,7 @@ export const registerUser = async (username, email, password) => {
     }
   }
 };
+
 
 export const loginUserWithUsername = async (identifier, password) => {
   let email = identifier;

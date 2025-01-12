@@ -18,59 +18,63 @@ const Dashboard = () => {
       // Fetch user session
       const session = await AsyncStorage.getItem('userSession');
       if (!session) throw new Error('User session not found');
-
+  
       const { user_id: userId } = JSON.parse(session);
       if (!userId) throw new Error('User ID not found in session');
-
+  
       // Fetch user details
       const userResponse = await fetch(`http://192.168.1.2:8000/api/account/fetch/?user_id=${userId}`);
       if (!userResponse.ok) throw new Error(`Error fetching user details: ${userResponse.statusText}`);
-
       const userData = await userResponse.json();
-      const userDetails = {
+  
+      // Set user details
+      setUser({
         id: userId,
         username: userData.account_details.username,
         gamesPlayed: userData.account_details.games_played || 0,
         points: userData.account_details.points || 0,
         assists: userData.account_details.assists || 0,
-      };
-      setUser(userDetails);
-
+      });
+  
       // Fetch team data
       const teamResponse = await fetch(`http://192.168.1.2:8000/api/fetch/teams/?user_id=${userId}`);
+      if (!teamResponse.ok) {
+        const errorData = await teamResponse.text();
+        console.error(`Team fetch error: ${errorData}`);
+        throw new Error(`Error fetching teams: ${teamResponse.statusText}`);
+      }
       const teamData = await teamResponse.json();
-
-      if (teamResponse.ok && teamData.teams.length > 0) {
-        // Set all teams for the user
+  
+      if (teamData.teams?.length > 0) {
         const userTeams = teamData.teams.filter((team) =>
           team.members?.some((member) => member.id === userId)
         );
-
-        if (userTeams.length > 0) {
-          setTeams(userTeams.map((team) => ({
+        setTeams(
+          userTeams.map((team) => ({
             id: team.id,
             name: team.name,
             coach: team.coach,
             members: team.members || [],
-          })));
-        } else {
-          setTeams([]);
-        }
+          }))
+        );
       } else {
         setTeams([]);
       }
-
+  
       // Fetch invitations
       const invitationsResponse = await fetch(`http://192.168.1.2:8000/api/invitations/${userId}/`);
       if (!invitationsResponse.ok) {
-        throw new Error(`HTTP error! status: ${invitationsResponse.status}`);
+        const errorData = await invitationsResponse.text();
+        console.error(`Invitations fetch error: ${errorData}`);
+        throw new Error(`Error fetching invitations: ${invitationsResponse.statusText}`);
       }
       const invitationsData = await invitationsResponse.json();
+  
       const pendingInvitations = invitationsData.filter(
         (invitation) => invitation.status === 'Pending'
       );
       setInvitations(pendingInvitations);
-
+  
     } catch (error) {
       console.error('Error fetching data:', error.message);
       handleNotification('Failed to refresh data.');
@@ -79,6 +83,7 @@ const Dashboard = () => {
       setRefreshing(false);
     }
   }, []);
+  
 
   // Initial data fetch
   useEffect(() => {
